@@ -90,6 +90,7 @@ executable mmc2
                        , http-conduit
                        , http-types
                        , random
+                       , transformers
   
   -- Directories containing source files.
   -- hs-source-dirs:      

@@ -100,7 +100,7 @@ instance ToJSON Command where
            , "apiKey"  .= key
            ]
   toJSON (Move key move) =
-    object [ "command" .= String "move"
-           , "move"    .= move
-           , "apiKey"  .= key
+    object [ "command"   .= String "move"
+           , "direction" .= move
+           , "apiKey"    .= key
            ]

@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Monad
+import Control.Monad.IO.Class
 import Data.Aeson
+import Data.Maybe
 import qualified Data.ByteString.Lazy as BL
 import Network.HTTP.Conduit
 import Network.HTTP.Types.Header
@@ -14,21 +17,20 @@ tEAMURL = "http://warmup.monkeymusicchallenge.com/team/The%20Human%20League"
 
 main = do
   (apiKey:_) <- getArgs
-  baseReq <- getBaseReq
-  print baseReq
 
   -- Start a new game
-  let startReq = setBody baseReq (encode (NewGame apiKey))
+  startReq <- liftM (setBody (encode (NewGame apiKey))) getBaseReq
 
   state <- withManager $ \manager -> do
     res <- httpLbs startReq manager
-    let state = decode $ responseBody res :: Maybe GameState
-    return state
-  
-  print state
+    let state = getState res
+    liftIO $ print state
+    liftIO $ loop apiKey manager (fromJust state)
 
-nextMove :: IO Move
-nextMove = randomIO
+  return ()
+
+nextMove :: GameState -> IO Move
+nextMove _ = randomIO
 
 getBaseReq :: IO Request
 getBaseReq = do
@@ -37,5 +39,18 @@ getBaseReq = do
   let req' = req { requestHeaders = rqh, method = "POST" }
   return req'
 
-setBody :: Request -> BL.ByteString -> Request
-setBody req body = req { requestBody = RequestBodyLBS body }
+setBody :: BL.ByteString -> Request -> Request
+setBody body req = req { requestBody = RequestBodyLBS body }
+
+getState :: Response BL.ByteString -> Maybe GameState
+getState res = decode $ responseBody res
+
+loop apiKey manager state
+  | turns state <= 0 = return ()
+  | otherwise        = do
+    m <- nextMove state
+    req <- liftM (setBody (encode (Move apiKey m))) getBaseReq
+    res <- httpLbs req manager
+    print $ getState res
+    let state' = fromJust (getState res)
+    loop apiKey manager state'
