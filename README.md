@@ -17,4 +17,6 @@ $ cabal build
 
 # Play
 $ cabal repl
+# Or run
+$ cabal run mmc2 APIKEY
 ~~~
