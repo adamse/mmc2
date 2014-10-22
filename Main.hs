@@ -21,7 +21,7 @@ main = do
   -- Start a new game
   startReq <- liftM (setBody (encode (NewGame apiKey))) getBaseReq
 
-  state <- withManager $ \manager -> do
+  withManager $ \manager -> do
     res <- httpLbs startReq manager
     let state = getState res
     liftIO $ print state
@@ -45,6 +45,7 @@ setBody body req = req { requestBody = RequestBodyLBS body }
 getState :: Response BL.ByteString -> Maybe GameState
 getState res = decode $ responseBody res
 
+loop :: ApiKey -> Manager -> GameState -> IO ()
 loop apiKey manager state
   | turns state <= 0 = return ()
   | otherwise        = do
