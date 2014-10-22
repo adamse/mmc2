@@ -10,16 +10,13 @@
 -- >>> let move = Move apiKey U
 -- >>> encode move
 -- "{\"apiKey\":\"YOUR API KEY\",\"command\":\"move\",\"move\":\"up\"}"
---
---
 module Types where
 
 import Control.Applicative
 import Control.Monad
-
 import Data.Aeson
-
 import GHC.Generics
+import System.Random
 
 -- | State of the game
 data GameState = GameState
@@ -71,7 +68,15 @@ instance FromJSON Item where
 -- | Possible moves
 data Move
   = U | D | L | R
-  deriving (Eq, Show)
+  deriving (Eq, Show, Enum, Bounded)
+
+instance Random Move where
+  random g =
+    let (i, g') = randomR (0, 3) g
+    in (toEnum i, g')
+  randomR (lo, hi) g =
+    let (i, g') = randomR (fromEnum lo, fromEnum hi) g
+    in (toEnum i, g')
 
 instance ToJSON Move where
   toJSON U = String "up"
