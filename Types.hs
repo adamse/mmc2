@@ -18,7 +18,7 @@ import Data.Aeson
 import GHC.Generics
 import System.Random
 
--- | State of the game
+-- | State of the game, as recieved from server.
 data GameState = GameState
   { layout :: [[Tile]] -- ^ Current map layout
   , position :: (Int, Int) -- ^ Our position in layout, indexed from (0, 0) at top left

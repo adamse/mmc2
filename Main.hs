@@ -3,14 +3,15 @@ module Main where
 
 import Control.Monad
 import Control.Monad.IO.Class
+import Control.Monad.State.Strict
 import Data.Aeson
 import Data.Maybe
 import qualified Data.ByteString.Lazy as BL
 import Network.HTTP.Conduit
 import Network.HTTP.Types.Header
-import System.Random
 import System.Environment
 
+import AI (nextMove, AIState, newAIState)
 import Types
 
 tEAMURL = "http://warmup.monkeymusicchallenge.com/team/The%20Human%20League"
@@ -25,12 +26,9 @@ main = do
     res <- httpLbs startReq manager
     let state = getState res
     liftIO $ print state
-    liftIO $ loop apiKey manager (fromJust state)
+    liftIO $ loop apiKey manager (fromJust state) newAIState
 
   return ()
-
-nextMove :: GameState -> IO Move
-nextMove _ = randomIO
 
 getBaseReq :: IO Request
 getBaseReq = do
@@ -45,13 +43,13 @@ setBody body req = req { requestBody = RequestBodyLBS body }
 getState :: Response BL.ByteString -> Maybe GameState
 getState res = decode $ responseBody res
 
-loop :: ApiKey -> Manager -> GameState -> IO ()
-loop apiKey manager state
-  | turns state <= 0 = return ()
+loop :: ApiKey -> Manager -> GameState -> AIState -> IO ()
+loop apiKey manager gameState aiState
+  | turns gameState <= 0 = return ()
   | otherwise        = do
-    m <- nextMove state
+    (m, aiState') <- runStateT (nextMove gameState) aiState
     req <- liftM (setBody (encode (Move apiKey m))) getBaseReq
     res <- httpLbs req manager
     print $ getState res
-    let state' = fromJust (getState res)
-    loop apiKey manager state'
+    let gameState' = fromJust (getState res)
+    loop apiKey manager gameState' aiState'

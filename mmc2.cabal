@@ -71,6 +71,7 @@ executable mmc2
                        , http-types
                        , random
                        , transformers
+                       , mtl
   
   -- Directories containing source files.
   -- hs-source-dirs:      
