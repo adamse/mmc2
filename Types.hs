@@ -18,10 +18,12 @@ import Data.Aeson
 import GHC.Generics
 import System.Random
 
+type Position = (Int, Int)
+
 -- | State of the game, as recieved from server.
 data GameState = GameState
   { layout :: [[Tile]] -- ^ Current map layout
-  , position :: (Int, Int) -- ^ Our position in layout, indexed from (0, 0) at top left
+  , position :: Position -- ^ Our position in layout, indexed from (0, 0) at top left
   , turns :: Int -- ^ Turn left until end of game
   , pickedUp :: [Item] -- ^ Items currently carrying
   } deriving (Eq, Show, Generic)
