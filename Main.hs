@@ -64,4 +64,3 @@ loop apiKey manager gameState agentState
     -- Rinse and repeat
     let gameState' = fromJust (getState res)
     loop apiKey manager gameState' agentState'
-
