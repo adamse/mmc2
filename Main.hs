@@ -11,7 +11,7 @@ import Network.HTTP.Conduit
 import Network.HTTP.Types.Header
 import System.Environment
 
-import AI (nextMove, AIState, newAIState)
+import Agent.Random
 import Types
 
 tEAMURL = "http://warmup.monkeymusicchallenge.com/team/The%20Human%20League"
@@ -23,10 +23,15 @@ main = do
   startReq <- liftM (setBody (encode (NewGame apiKey))) getBaseReq
 
   withManager $ \manager -> do
-    res <- httpLbs startReq manager
-    let state = getState res
-    liftIO $ print state
-    liftIO $ loop apiKey manager (fromJust state) newAIState
+    response <- httpLbs startReq manager
+    let gameState = getState response
+
+    -- Set up new agent
+    agentState <- liftIO (newAgent :: IO AgentState)
+    -- Run agent
+    finalState <- liftIO $ loop apiKey manager (fromJust gameState) agentState
+    -- Tear down agent
+    liftIO (killAgent finalState)
 
   return ()
 
@@ -43,13 +48,18 @@ setBody body req = req { requestBody = RequestBodyLBS body }
 getState :: Response BL.ByteString -> Maybe GameState
 getState res = decode $ responseBody res
 
-loop :: ApiKey -> Manager -> GameState -> AIState -> IO ()
-loop apiKey manager gameState aiState
-  | turns gameState <= 0 = return ()
+loop :: Agent a => ApiKey -> Manager -> GameState -> a -> IO a
+loop apiKey manager gameState agentState
+  | turns gameState <= 0 = return agentState
   | otherwise        = do
-    (m, aiState') <- runStateT (nextMove gameState) aiState
+    -- Step our agent
+    (m, agentState') <- runStateT (stepAgent gameState) agentState
+
+    -- Send new action to server
     req <- liftM (setBody (encode (Move apiKey m))) getBaseReq
     res <- httpLbs req manager
-    print $ getState res
+
+    -- Rinse and repeat
     let gameState' = fromJust (getState res)
-    loop apiKey manager gameState' aiState'
+    loop apiKey manager gameState' agentState'
+
