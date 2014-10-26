@@ -11,4 +11,4 @@ class Agent agentState where
   -- | Tear down agent.
   killAgent :: agentState  -> IO ()
   -- | Let the agent take a step.
-  stepAgent :: Monad m => GameState -> StateT agentState m Move
+  stepAgent :: GameState -> StateT agentState IO Move
