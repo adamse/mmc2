@@ -10,6 +10,7 @@ import qualified Data.ByteString.Lazy as BL
 import Network.HTTP.Conduit
 import Network.HTTP.Types.Header
 import System.Environment
+import System.Exit
 
 import Agent.Random
 import GameTypes
@@ -17,7 +18,14 @@ import GameTypes
 tEAMURL = "http://warmup.monkeymusicchallenge.com/team/The%20Human%20League"
 
 main = do
-  (apiKey:_) <- getArgs
+  args <- getArgs
+
+  unless (not (null args)) $ do
+    p <- getProgName
+    putStrLn $ "Usage: " ++ p ++ " API_KEY"
+    exitFailure
+
+  let apiKey = head args
 
   -- Start a new game
   startReq <- liftM (setBody (encode (NewGame apiKey))) getBaseReq
