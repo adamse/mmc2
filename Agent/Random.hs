@@ -14,9 +14,7 @@ import Agent
 data AgentState = AS { gen :: StdGen }
 
 instance Agent AgentState where
-  newAgent = do
-    gen <- newStdGen
-    return (AS gen)
+  newAgent = fmap AS newStdGen
   killAgent _ = return ()
   stepAgent gs = StateT $ \(AS g) ->
     let (m, g') = random g
