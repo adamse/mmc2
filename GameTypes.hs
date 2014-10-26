@@ -3,14 +3,17 @@
 
 -- |
 -- Implements all types and instances needed to communicate with the game server
---
--- Encoding a command:
---
--- >>> let apiKey = "YOUR API KEY"
--- >>> let move = Move apiKey U
--- >>> encode move
--- "{\"apiKey\":\"YOUR API KEY\",\"command\":\"move\",\"move\":\"up\"}"
-module GameTypes where
+module GameTypes (
+  -- * From server
+    Position
+  , GameState (..)
+  , Tile (..)
+  , Item (..)
+  -- * To server
+  , ApiKey
+  , Move (..)
+  , Command (..)
+  ) where
 
 import Control.Applicative
 import Control.Monad
@@ -18,6 +21,7 @@ import Data.Aeson
 import GHC.Generics
 import System.Random
 
+-- | Position on grid.
 type Position = (Int, Int)
 
 -- | State of the game, as recieved from server.
@@ -31,7 +35,7 @@ data GameState = GameState
 -- Use fancy Generics to auto-derive this instance!! :D
 instance FromJSON GameState
 
--- | Possible tiles in map
+-- | Tile types on map.
 data Tile
   = Wall -- ^ A wall
   | Empty -- ^ Empty tile
@@ -52,7 +56,7 @@ instance FromJSON Tile where
     _          -> mzero -- Fail if not one of above types
   parseJSON _ = mzero -- Fail if not string
 
--- | Possible items on map
+-- | Item types.
 data Item
   = Song
   | Album
@@ -67,9 +71,15 @@ instance FromJSON Item where
     _          -> mzero
   parseJSON _ = mzero
 
--- | Possible moves
+-- | API keys
+type ApiKey = String
+
+-- | Agent moves.
 data Move
-  = U | D | L | R
+  = U -- ^ Up
+  | D -- ^ Down
+  | L -- ^ Left
+  | R -- ^ Right
   deriving (Eq, Show, Enum, Bounded)
 
 instance Random Move where
@@ -86,15 +96,18 @@ instance ToJSON Move where
   toJSON L = String "left"
   toJSON R = String "right"
 
-
 -- | Command to send to server
+--
+-- Encoding a command:
+--
+-- >>> let apiKey = "YOUR API KEY"
+-- >>> let move = Move apiKey U
+-- >>> encode move
+-- "{\"apiKey\":\"YOUR API KEY\",\"command\":\"move\",\"move\":\"up\"}"
 data Command
   = NewGame ApiKey
   | Move ApiKey Move
   deriving (Eq, Show)
-
--- | Type of api key
-type ApiKey = String
 
 instance ToJSON Command where
   toJSON (NewGame key) = 

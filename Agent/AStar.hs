@@ -1,9 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
+
 -- |
 -- An AStar agent implementation
 module Agent.AStar (
-    Agent (..)
-  , AgentState ()
+  AStarAgent ()
   ) where
 
 import Control.Monad.State.Strict
@@ -18,10 +18,10 @@ import GameTypes
 type Target = Position
 
 -- | The internal state of the AI agent
-data AgentState = Void
+data AStarAgent = Void
   deriving (Show, Eq)
 
-instance Agent AgentState where
+instance Agent AStarAgent where
   newAgent = return Void
   killAgent _ = return ()
   stepAgent (GameState {..}) = do
@@ -29,7 +29,6 @@ instance Agent AgentState where
     let target = acquireTarget position playout
     let (m:_) = astar position target layout
     return m
-
 
 -- | Perform A* search on grid
 astar :: Position -> Position -> [[Tile]] -> [Move]

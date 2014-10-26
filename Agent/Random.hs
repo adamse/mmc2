@@ -1,8 +1,7 @@
 -- |
 -- Implementation of dumb random AI
 module Agent.Random (
-    Agent(..)
-  , AgentState
+  RandomAgent
   ) where
 
 import Control.Monad.State.Strict
@@ -11,9 +10,10 @@ import System.Random
 import GameTypes
 import Agent
 
-data AgentState = AS { gen :: StdGen }
+-- | Contains a generator for random moves
+data RandomAgent = AS { gen :: StdGen }
 
-instance Agent AgentState where
+instance Agent RandomAgent where
   newAgent = fmap AS newStdGen
   killAgent _ = return ()
   stepAgent gs = StateT $ \(AS g) ->
