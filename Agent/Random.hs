@@ -18,10 +18,6 @@ instance Agent AgentState where
     gen <- newStdGen
     return (AS gen)
   killAgent _ = return ()
-  stepAgent gs = do
-    AS g <- get
-    let (move, g') = random g
-    put (AS g')
-    return move
-
-
+  stepAgent gs = StateT $ \(AS g) ->
+    let (m, g') = random g
+    in return (m, AS g')
