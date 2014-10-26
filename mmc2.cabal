@@ -50,9 +50,6 @@ executable mmc2
   -- .hs or .lhs file containing the Main module.
   main-is:             Main.hs
   
-  -- Modules included in this library but not exported.
-  other-modules:       Types
-  
   -- LANGUAGE extensions used by modules in this package.
   other-extensions:    OverloadedStrings, DeriveGeneric
   

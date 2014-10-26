@@ -2,7 +2,7 @@ module Agent where
 
 import Control.Monad.State.Strict
 
-import Types
+import GameTypes
 
 class Agent agentState where
   newAgent :: IO agentState 

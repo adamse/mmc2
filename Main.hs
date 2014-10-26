@@ -12,7 +12,7 @@ import Network.HTTP.Types.Header
 import System.Environment
 
 import Agent.Random
-import Types
+import GameTypes
 
 tEAMURL = "http://warmup.monkeymusicchallenge.com/team/The%20Human%20League"
 
@@ -54,6 +54,8 @@ loop apiKey manager gameState agentState
   | otherwise        = do
     -- Step our agent
     (m, agentState') <- runStateT (stepAgent gameState) agentState
+
+    print m
 
     -- Send new action to server
     req <- liftM (setBody (encode (Move apiKey m))) getBaseReq

@@ -10,7 +10,7 @@
 -- >>> let move = Move apiKey U
 -- >>> encode move
 -- "{\"apiKey\":\"YOUR API KEY\",\"command\":\"move\",\"move\":\"up\"}"
-module Types where
+module GameTypes where
 
 import Control.Applicative
 import Control.Monad

@@ -8,7 +8,7 @@ module Agent.Random (
 import Control.Monad.State.Strict
 import System.Random
 
-import Types
+import GameTypes
 import Agent
 
 data AgentState = AS { gen :: StdGen }
