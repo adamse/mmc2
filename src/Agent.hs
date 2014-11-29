@@ -12,4 +12,4 @@ class Agent agentState where
   -- | Tear down agent.
   killAgent :: agentState  -> IO ()
   -- | Let the agent take a step.
-  stepAgent :: FromServer -> StateT agentState IO Move
+  stepAgent :: FromServer -> StateT agentState IO Command

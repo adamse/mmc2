@@ -23,13 +23,13 @@ apiEndPoint = "http://competition.monkeymusicchallenge.com/game"
 
 main :: IO ()
 main = do
-  [team, apiKey, gameId'] <- getArgs
-  let gameId = read gameId'
+  [team, apiKey, gameId] <- getArgs
 
   let toServer = ToServer team apiKey gameId
 
+  print (toServer JoinGame)
   -- Start a new game
-  startReq <- liftM (setBody (encode (toServer JoinGame))) getBaseReq
+  startReq <- getReq (toServer JoinGame)
 
   withManager $ \manager -> do
     response <- httpLbs startReq manager
@@ -38,41 +38,43 @@ main = do
     -- Set up new agent
     agentState <- liftIO (newAgent :: IO RandomAgent)
     -- Run agent
-    finalState <- liftIO $ loop apiKey manager (fromJust gameState) agentState
+    finalState <- liftIO $ loop toServer apiKey manager (fromJust gameState) agentState
     -- Tear down agent
     liftIO (killAgent finalState)
 
   return ()
 
 -- | Base request to API with correct headers and method.
-getBaseReq :: IO Request
-getBaseReq = do
+getReq :: ToServer -> IO Request
+getReq t = do
   req <- parseUrl apiEndPoint
   let rqh = (hContentType, "application/json") : requestHeaders req
-  let req' = req { requestHeaders = rqh, method = "POST" }
+  let req' = req {
+      requestHeaders = rqh
+    , method = "POST"
+    , requestBody = RequestBodyLBS (encode t)
+    }
   return req'
-
--- | Set the body of a request.
-setBody :: BL.ByteString -> Request -> Request
-setBody body req = req { requestBody = RequestBodyLBS body }
 
 -- | Create a 'FromServer' from JSON response.
 getState :: Response BL.ByteString -> Maybe FromServer
 getState res = decode $ responseBody res
 
 -- | Main agent loop.
-loop :: Agent a => ApiKey -> Manager -> FromServer -> a -> IO a
-loop apiKey manager gameState agentState
-  | remainingTurns gameState <= 0 = return agentState
-  | otherwise        = do
-    -- Step our agent
-    (m, agentState') <- runStateT (stepAgent gameState) agentState
-    print m
+loop :: Agent a => (Command -> ToServer) -> ApiKey -> Manager -> FromServer -> a -> IO a
+loop toServer apiKey manager = go
+ where
+  go gameState agentState
+    | remainingTurns gameState <= 0 = return agentState
+    | otherwise = do
+      -- Step our agent
+      (m, agentState') <- runStateT (stepAgent gameState) agentState
+      print m
 
-    -- Send new action to server
-    req <- liftM (setBody (encode (Move m))) getBaseReq
-    res <- httpLbs req manager
+      -- Send new action to server
+      req <- getReq (toServer m)
+      res <- httpLbs req manager
 
-    -- Rinse and repeat
-    let gameState' = fromJust (getState res)
-    loop apiKey manager gameState' agentState'
+      -- Rinse and repeat
+      let gameState' = fromJust (getState res)
+      go gameState' agentState'

@@ -19,4 +19,4 @@ instance Agent RandomAgent where
   killAgent _ = return ()
   stepAgent gs = StateT $ \(AS g) ->
     let (m, g') = random g
-    in return (m, AS g')
+    in return (Move m, AS g')

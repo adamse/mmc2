@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
-
+{-# LANGUAGE RecordWildCards #-}
 -- |
 -- Implements all types and instances needed to communicate with the game server
 module ToServer where
@@ -59,7 +58,7 @@ toPairs (Moves moves) =
 -- | API keys
 type ApiKey = String
 
-type GameId = Int
+type GameId = String
 
 type Team = String
 
@@ -71,7 +70,7 @@ data ToServer = ToServer
   } deriving (Eq, Show)
 
 instance ToJSON ToServer where
-  toJSON (ToServer apiKey gameId team command) = object (
+  toJSON (ToServer {..}) = object (
     [ "team" .= team
     , "apiKey" .= apiKey
     , "gameId" .= gameId
