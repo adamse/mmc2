@@ -61,6 +61,7 @@ executable mmc2
     , Agent
     , Agent.Random
     , Agent.AStar
+    , Agent.Dijkstra
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
@@ -78,6 +79,7 @@ executable mmc2
     , mtl
     , containers
     , astar
+    , PSQueue
   
   -- Directories containing source files.
   -- hs-source-dirs:      

@@ -13,7 +13,7 @@ import System.Environment
 import System.Exit
 
 import Agent
-import Agent.Random
+import Agent.Dijkstra
 import FromServer
 import ToServer
 
@@ -36,7 +36,7 @@ main = do
     let gameState = getState response
 
     -- Set up new agent
-    agentState <- liftIO (newAgent :: IO RandomAgent)
+    agentState <- liftIO (newAgent :: IO DijkstraAgent)
     -- Run agent
     finalState <- liftIO $ loop toServer apiKey manager (fromJust gameState) agentState
     -- Tear down agent
