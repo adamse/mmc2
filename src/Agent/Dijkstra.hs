@@ -59,8 +59,14 @@ goUser (FromServer {..}) = do
     pl = positionedLayout layout
     movv t = user t || movable t
 
-getTarget dm pl gn = M.foldrWithKey (\p _ currentBest -> case cmpGoodness pl dm gn p currentBest of {
-        GT -> currentBest; _  -> p }) (0,0) dm
+getTarget dm pl gn =
+  M.foldrWithKey
+    (\p _ currentBest ->
+      case cmpGoodness pl dm gn p currentBest of 
+        GT -> currentBest
+        _  -> p)
+    (0,0)
+    dm
 
 cmpGoodness pl dm gn p1 p2 = compare (gn dm pl p1) (gn dm pl p2)
 
