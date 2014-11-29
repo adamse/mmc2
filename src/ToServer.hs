@@ -11,6 +11,8 @@ import Data.Aeson
 import GHC.Generics
 import System.Random
 
+import FromServer
+
 -- | Agent moves.
 data Move
   = U -- ^ Up
@@ -37,6 +39,7 @@ instance ToJSON Move where
 data Command
   = Idle
   | JoinGame
+  | Use Carryable
   | Move Move
   | Moves [Move]
   deriving (Eq, Show)
@@ -46,6 +49,7 @@ instance ToJSON Command where
 
 toPairs Idle = [ "command" .= String "idle" ]
 toPairs JoinGame = [ "command" .= String "join game" ]
+toPairs (Use c) = [ "command" .= String "use", "item" .= c ]
 toPairs (Move move) =
   [ "command" .= String "move"
   , "direction" .= move
