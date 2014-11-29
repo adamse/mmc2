@@ -120,10 +120,10 @@ data Carryable
 instance FromJSON Carryable where
   parseJSON (String i) = case i of
     "banana" -> pure Banana
-    "tarp" -> pure Trap
+    "trap" -> pure Trap
     _ -> mzero
   parseJSON _ = mzero
 
 instance ToJSON Carryable where
-  toJSON Banana = String "Banana"
+  toJSON Banana = String "banana"
   toJSON Trap = String "trap"
