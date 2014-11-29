@@ -19,7 +19,7 @@ import ToServer
 
 -- | URL for API-endpoint.
 apiEndPoint :: String
-apiEndPoint = "http://warmup.monkeymusicchallenge.com/team/The%20Human%20League"
+apiEndPoint = "http://competition.monkeymusicchallenge.com/game"
 
 main :: IO ()
 main = do
