@@ -78,7 +78,7 @@ instance FromJSON Tile where
   parseJSON _ = mzero -- Fail if not string
 
 movable :: Tile -> Bool
-movable t = tunnel t || carryable t || valuable t || (t `elem` [Empty, OpenDoor])
+movable t = tunnel t || carryable t || valuable t || (t `elem` [Empty, OpenDoor, Monkey])
 
 carryable :: Tile -> Bool
 carryable (Carryable _) = True

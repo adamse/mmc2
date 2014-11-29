@@ -40,16 +40,10 @@ instance Agent DijkstraAgent where
 	stepAgent = dostuff
 
 dostuff fs@(FromServer {..}) = do
-    traceShowM fs
-    traceShowM pl
     let (dm, pm) = dijkstra position pl (neighbours pl)
-    traceShowM dm
-    traceShowM pm
     let target = M.foldrWithKey (\p _ currentBest -> case cmpGoodness pl dm p currentBest of {
         GT -> currentBest; _  -> p }) (0,0) dm
-    traceShowM target
     let path = reverse $ constructPath pm position target
-    traceShowM path
     let m = move position (path !! 1)
     return (Move m)
   where
@@ -77,26 +71,28 @@ dijkstra :: Position -- ^ Start position
          -> PositionedLayout
          -> (Position -> Set Position) -- ^ The graph
          -> (DistanceMap, PrevMap)
-dijkstra start layout graph = go start (newDistance start) M.empty (allnodes layout)
+dijkstra start layout graph = go (newDistance start) M.empty (allnodes layout)
   where
-    go current dist prev q =
+    go d p q =
      if S.null q
-     then (dist, prev)
-     else let u = F.minimumBy (cmpDist dist) q
+     then (d, p)
+     else let u = F.minimumBy (cmpDist d) q
               q' = S.delete u q
-              (d, p) = S.foldr (\v (d, p) -> if distance d u + 1 < distance d v
-                then (M.insert v (distance d u + 1) d, M.insert v u p)
-                else (d, p)
-               ) (dist, prev) (trace ("current graph" ++ show (graph u)) (graph u))
+              (d', p') = S.foldr (\v (d, p) -> 
+                let alt = distance d u + 1
+                in if alt < distance d v
+                   then (M.insert v alt d, M.insert v u p)
+                   else (d, p)
+               ) (d, p) (graph u)
 
-          in (d, p)
+          in go d' p' q'
 
-    distance :: DistanceMap -> Position -> Int
-    distance m p = fromMaybe 100000 (M.lookup p m)
-    cmpDist :: DistanceMap -> Position -> Position -> Ordering
-    cmpDist m p1 p2 = let d1 = distance m p1
-                          d2 = distance m p2
-                       in compare d1 d2
+distance :: DistanceMap -> Position -> Int
+distance m p = fromMaybe 100000 (M.lookup p m)
+cmpDist :: DistanceMap -> Position -> Position -> Ordering
+cmpDist m p1 p2 = let d1 = distance m p1
+                      d2 = distance m p2
+                   in compare d1 d2
 
 cmpGoodness :: PositionedLayout -> DistanceMap -> Position -> Position -> Ordering
 cmpGoodness pl dm p1 p2 = compare (goodness dm pl p1) (goodness dm pl p2)
