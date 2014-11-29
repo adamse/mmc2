@@ -80,5 +80,4 @@ loop toServer apiKey manager = go
 
       -- Rinse and repeat
       let gameState' = fromJust (getState res)
-      print $ inventorySize gameState'
       go gameState' agentState'

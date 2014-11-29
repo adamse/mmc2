@@ -7,7 +7,7 @@ module Agent.Dijkstra (
 	) where
 
 
-import Debug.Trace
+import Control.Monad.State.Strict
 import Data.Foldable as F
 import Data.Maybe
 import Data.Set (Set)
@@ -21,7 +21,7 @@ import ToServer
 type Target = Position
 
 -- | Constructor of Agent
-data DijkstraAgent = Void
+data DijkstraAgent = DA { currentPath :: [Move] }
 	deriving (Show, Eq)
 
 type DistanceMap = M.Map Position Int
@@ -29,14 +29,16 @@ type PrevMap = M.Map Position Position
 type PositionedLayout = M.Map Position Tile
 
 instance Agent DijkstraAgent where
-  newAgent = return Void
+  newAgent = return (DA [])
   killAgent _ = return ()
-  stepAgent fs@(FromServer {..}) = do
+  stepAgent fs@(FromServer {..}) =
     if length inventory < inventorySize
-      then do traceShowM "Valuable"; goValuable fs
-      else do traceShowM "User"; goUser fs
+      then goValuable fs
+      else goUser fs
 
+goValuable :: FromServer -> StateT DijkstraAgent IO Command
 goValuable (FromServer {..}) = do
+    liftIO $ print "Valuable"
     let (dm, pm) = dijkstra position pl (neighbours movv pl)
     let target = getTarget dm pl goodness
     let path = reverse $ constructPath pm position target
@@ -47,6 +49,7 @@ goValuable (FromServer {..}) = do
     movv t = valuable t || movable t
 
 goUser (FromServer {..}) = do
+    liftIO $ print "User"
     let (dm, pm) = dijkstra position pl (neighbours movv pl)
     let target = getTarget dm pl userGoodness
     let path = reverse $ constructPath pm position target
