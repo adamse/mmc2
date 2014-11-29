@@ -33,9 +33,12 @@ instance Agent DijkstraAgent where
   newAgent = return (DA [] Nothing)
   killAgent _ = return ()
   stepAgent fs@(FromServer {..}) =
-    if length inventory < inventorySize
-      then goValuable fs
-      else goUser fs
+    if ((Carryable Banana) `Prelude.elem` inventory)
+        then return (Use Banana)
+        else
+            if length inventory < inventorySize
+            then goValuable fs
+            else goUser fs
 
 goValuable :: FromServer -> StateT DijkstraAgent IO Command
 goValuable (FromServer {..}) = do
@@ -47,7 +50,7 @@ goValuable (FromServer {..}) = do
     return (Move m)
   where
     pl = positionedLayout layout
-    movv t = valuable t || movable t
+    movv t = valuable t || carryable t || movable t
 
 goUser (FromServer {..}) = do
     liftIO $ print "User"
@@ -79,11 +82,12 @@ goodness dm pl p =
         Valuable Playlist -> 10
         Valuable Album -> 4
         Valuable Song -> 1
-        _ -> 0
-  in if valuable t
+        Carryable Banana -> 15
+        _ -> -100000
+  in if (valuable t) || (carryable t)
      then d - prio
      else 100000
-
+     
 userGoodness :: DistanceMap -> PositionedLayout-> Position -> Int
 userGoodness dm pl p = if t then dist else dist + 100000
   where t = maybe False user (M.lookup p pl)
