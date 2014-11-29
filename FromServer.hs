@@ -12,7 +12,7 @@ import GHC.Generics
 type Position = (Int, Int)
 
 -- | State of the game, as recieved from server.
-data GameState = GameState
+data FromServer = FromServer
   { layout :: [[Tile]] -- ^ Current map layout
   , position :: Position -- ^ Our position in layout, indexed from (0, 0) at top left
   , remainingTurns :: Int -- ^ Turn left until end of game
@@ -23,7 +23,7 @@ data GameState = GameState
   } deriving (Eq, Show, Generic)
 
 -- Use fancy Generics to auto-derive this instance!! :D
-instance FromJSON GameState
+instance FromJSON FromServer
 
 data Buffs = Buffs
   { speedy :: Maybe Int -- ^ speedy buff for some turns

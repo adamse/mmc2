@@ -54,15 +54,16 @@ instance ToJSON Response
 -- "{\"apiKey\":\"YOUR API KEY\",\"command\":\"move\",\"move\":\"up\"}"
 data Command
   = Idle
+  | JoinGame
   | Move Move
   | Moves [Move]
-  | JoinGame
   deriving (Eq, Show)
 
 instance ToJSON Command where
   toJSON = object . toPairs
 
 toPairs Idle = [ "command" .= String "idle" ]
+toPairs JoinGame = [ "command" .= String "join game" ]
 toPairs (Move move) =
   [ "command" .= String "move"
   , "direction" .= move
@@ -79,15 +80,15 @@ type GameId = Int
 
 type Team = String
 
-data Request = Request
+data ToServer = ToServer
   { apiKey :: ApiKey
   , gameId :: GameId
   , team :: Team
   , command :: Command
   } deriving (Eq, Show)
 
-instance ToJSON Request where
-  toJSON (Request apiKey gameId team command) = object (
+instance ToJSON ToServer where
+  toJSON (ToServer apiKey gameId team command) = object (
     [ "team" .= team
     , "apiKey" .= apiKey
     , "gameId" .= gameId
