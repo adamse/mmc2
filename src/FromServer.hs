@@ -19,7 +19,7 @@ data FromServer = FromServer
   , isGameOver :: Bool
   , score :: Int
   , buffs :: Maybe Buffs
-  , inventory :: [Valuable] -- ^ Items currently carrying
+  , inventory :: [Tile] -- ^ Items currently carrying
   , inventorySize :: Int
   } deriving (Eq, Show, Generic)
 
