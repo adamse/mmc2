@@ -20,6 +20,7 @@ data FromServer = FromServer
   , score :: Int
   , buffs :: Maybe Buffs
   , inventory :: [Valuable] -- ^ Items currently carrying
+  , inventorySize :: Int
   } deriving (Eq, Show, Generic)
 
 -- Use fancy Generics to auto-derive this instance!! :D
@@ -78,7 +79,7 @@ instance FromJSON Tile where
   parseJSON _ = mzero -- Fail if not string
 
 movable :: Tile -> Bool
-movable t = tunnel t || carryable t || valuable t || (t `elem` [Empty, OpenDoor, Monkey])
+movable t = t `elem` [Empty, OpenDoor]
 
 carryable :: Tile -> Bool
 carryable (Carryable _) = True
@@ -91,6 +92,10 @@ valuable _ = False
 tunnel :: Tile -> Bool
 tunnel (Tunnel _) = True
 tunnel _ = False
+
+user :: Tile -> Bool
+user User = True
+user _ = False
 
 -- | Item types.
 data Valuable

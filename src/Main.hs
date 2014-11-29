@@ -31,6 +31,8 @@ main = do
   -- Start a new game
   startReq <- getReq (toServer JoinGame)
 
+  print JoinGame
+
   withManager $ \manager -> do
     response <- httpLbs startReq manager
     let gameState = getState response
@@ -68,13 +70,15 @@ loop toServer apiKey manager = go
     | remainingTurns gameState <= 0 = return agentState
     | otherwise = do
       -- Step our agent
-      (m, agentState') <- runStateT (stepAgent gameState) agentState
-      print m
+      (command, agentState') <- runStateT (stepAgent gameState) agentState
+
+      print command
 
       -- Send new action to server
-      req <- getReq (toServer m)
+      req <- getReq (toServer command)
       res <- httpLbs req manager
 
       -- Rinse and repeat
       let gameState' = fromJust (getState res)
+      print $ inventorySize gameState'
       go gameState' agentState'

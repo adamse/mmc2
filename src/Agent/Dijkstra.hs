@@ -6,19 +6,13 @@ module Agent.Dijkstra (
 	DijkstraAgent() 
 	) where
 
-import Debug.Trace
 
-import Control.Monad.State.Strict
-import Data.List
-import Data.Function
+import Debug.Trace
 import Data.Foldable as F
 import Data.Maybe
-import Data.Ord
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Map as M
-import Data.PSQueue
-import System.Random
 
 import Agent
 import FromServer
@@ -35,26 +29,57 @@ type PrevMap = M.Map Position Position
 type PositionedLayout = M.Map Position Tile
 
 instance Agent DijkstraAgent where
-	newAgent = return Void
-	killAgent _ = return ()
-	stepAgent = dostuff
+  newAgent = return Void
+  killAgent _ = return ()
+  stepAgent fs@(FromServer {..}) = do
+    if length inventory < inventorySize
+      then do traceShowM "Valuable"; goValuable fs
+      else do traceShowM "User"; goUser fs
 
-dostuff fs@(FromServer {..}) = do
-    let (dm, pm) = dijkstra position pl (neighbours pl)
-    let target = M.foldrWithKey (\p _ currentBest -> case cmpGoodness pl dm p currentBest of {
-        GT -> currentBest; _  -> p }) (0,0) dm
+goValuable (FromServer {..}) = do
+    let (dm, pm) = dijkstra position pl (neighbours movv pl)
+    let target = getTarget dm pl goodness
     let path = reverse $ constructPath pm position target
     let m = move position (path !! 1)
     return (Move m)
   where
     pl = positionedLayout layout
+    movv t = valuable t || movable t
+
+goUser (FromServer {..}) = do
+    let (dm, pm) = dijkstra position pl (neighbours movv pl)
+    let target = getTarget dm pl userGoodness
+    let path = reverse $ constructPath pm position target
+    let m = move position (path !! 1)
+    return (Move m)
+  where
+    pl = positionedLayout layout
+    movv t = user t || movable t
+
+getTarget dm pl gn = M.foldrWithKey (\p _ currentBest -> case cmpGoodness pl dm gn p currentBest of {
+        GT -> currentBest; _  -> p }) (0,0) dm
+
+cmpGoodness pl dm gn p1 p2 = compare (gn dm pl p1) (gn dm pl p2)
+
+goodness :: DistanceMap -> PositionedLayout -> Position -> Int
+goodness dm pl p =
+  let d = fromJust $ M.lookup p dm
+      t = fromJust $ M.lookup p pl
+      g = 4
+  in if valuable t
+     then d - g
+     else 100000
+
+userGoodness :: DistanceMap -> PositionedLayout-> Position -> Int
+userGoodness _ pl p = if t then 0 else 100000
+  where t = maybe False user (M.lookup p pl)
 
 -- | Which move to choose to move from p1 to neighbour p2
 move :: Position -> Position -> Move
-move (x1, y1) (x2, y2)
+move (y1, x1) (y2, x2)
   | x1 < x2 = R
   | x1 > x2 = L
-  | y1 < y2 = U
+  | y1 > y2 = U
   | otherwise = D
 
 constructPath :: PrevMap -> Position -> Target -> [Position]
@@ -71,7 +96,7 @@ dijkstra :: Position -- ^ Start position
          -> PositionedLayout
          -> (Position -> Set Position) -- ^ The graph
          -> (DistanceMap, PrevMap)
-dijkstra start layout graph = go (newDistance start) M.empty (allnodes layout)
+dijkstra start layout graph = go (newDistance start) M.empty (S.insert start $ allnodes layout)
   where
     go d p q =
      if S.null q
@@ -83,7 +108,7 @@ dijkstra start layout graph = go (newDistance start) M.empty (allnodes layout)
                 in if alt < distance d v
                    then (M.insert v alt d, M.insert v u p)
                    else (d, p)
-               ) (d, p) (graph u)
+               ) (d, p) $ graph u
 
           in go d' p' q'
 
@@ -94,23 +119,11 @@ cmpDist m p1 p2 = let d1 = distance m p1
                       d2 = distance m p2
                    in compare d1 d2
 
-cmpGoodness :: PositionedLayout -> DistanceMap -> Position -> Position -> Ordering
-cmpGoodness pl dm p1 p2 = compare (goodness dm pl p1) (goodness dm pl p2)
-
-goodness :: DistanceMap -> PositionedLayout -> Position -> Int
-goodness dm pl p =
-  let d = fromJust $ M.lookup p dm
-      t = fromJust $ M.lookup p pl
-      g = 4
-  in if valuable t
-     then d - g
-     else 100000
-
-neighbours :: PositionedLayout -> Position -> Set Position
-neighbours playout (x, y) =
+neighbours :: (Tile -> Bool) -> PositionedLayout -> Position -> Set Position
+neighbours movv playout (x, y) =
   S.fromList
   . map fst
-  . filter (maybe False movable . snd)
+  . filter (maybe False movv . snd)
   . zip possible
   . map (`M.lookup` playout)
   $ possible
