@@ -12,12 +12,10 @@ module ToServer (
 
 import Control.Applicative
 import Control.Monad
+import Data.Monoid
 import Data.Aeson
 import GHC.Generics
 import System.Random
-
--- | API keys
-type ApiKey = String
 
 -- | Agent moves.
 data Move
@@ -58,15 +56,39 @@ data Command
   = Idle
   | Move Move
   | Moves [Move]
+  | JoinGame
   deriving (Eq, Show)
 
 instance ToJSON Command where
-  toJSON Idle = object [ "command" .= String "idle" ]
-  toJSON (Move move) =
-    object [ "command"   .= String "move"
-           , "direction" .= move
-           ]
-  toJSON (Moves moves) =
-    object [ "command" .= String "move"
-           , "directions" .= moves
-           ]
+  toJSON = object . toPairs
+
+toPairs Idle = [ "command" .= String "idle" ]
+toPairs (Move move) =
+  [ "command" .= String "move"
+  , "direction" .= move
+  ]
+toPairs (Moves moves) =
+  [ "command" .= String "move"
+  , "directions" .= moves
+  ]
+
+-- | API keys
+type ApiKey = String
+
+type GameId = Int
+
+type Team = String
+
+data Request = Request
+  { apiKey :: ApiKey
+  , gameId :: GameId
+  , team :: Team
+  , command :: Command
+  } deriving (Eq, Show)
+
+instance ToJSON Request where
+  toJSON (Request apiKey gameId team command) = object (
+    [ "team" .= team
+    , "apiKey" .= apiKey
+    , "gameId" .= gameId
+    ] <> toPairs command)
