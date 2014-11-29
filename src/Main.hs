@@ -60,12 +60,12 @@ getBaseReq = do
 setBody :: BL.ByteString -> Request -> Request
 setBody body req = req { requestBody = RequestBodyLBS body }
 
--- | Create a 'GameState' from JSON response.
-getState :: Response BL.ByteString -> Maybe GameState
+-- | Create a 'FromServer' from JSON response.
+getState :: Response BL.ByteString -> Maybe FromServer
 getState res = decode $ responseBody res
 
 -- | Main agent loop.
-loop :: Agent a => ApiKey -> Manager -> GameState -> a -> IO a
+loop :: Agent a => ApiKey -> Manager -> FromServer -> a -> IO a
 loop apiKey manager gameState agentState
   | remainingTurns gameState <= 0 = return agentState
   | otherwise        = do
