@@ -9,7 +9,11 @@ module Agent.AStar (
 import Control.Monad.State.Strict
 import Data.List
 import Data.Function
+import Data.Graph.AStar
+import Data.Maybe
 import Data.Ord
+import Data.Set (Set)
+import qualified Data.Set as S
 import System.Random
 
 import Agent
@@ -24,15 +28,49 @@ data AStarAgent = Void
 instance Agent AStarAgent where
   newAgent = return Void
   killAgent _ = return ()
-  stepAgent (GameState {..}) = do
-    let playout = positionedLayout layout
-    let target = acquireTarget position playout
-    let (m:_) = astar position target layout
-    return m
+  stepAgent (GameState {..}) =
+    return $ move position (path !! 1)
+   where
+    (Just path) = aStar
+      (neighbours playout)
+      (\_ _ -> 1)
+      (dist position)
+      (goal playout)
+      position
+    playout = positionedLayout layout
 
--- | Perform A* search on grid
-astar :: Position -> Position -> [[Tile]] -> [Move]
-astar current target map = undefined
+-- | Which move to choose to move from p1 to neighbour p2
+move :: Position -> Position -> Move
+move (x1, y1) (x2, y2)
+  | x1 < x2 = R
+  | x1 > x2 = L
+  | y1 < y2 = U
+  | otherwise = D
+
+-- | Do we want to go there?
+goal :: [(Position, Tile)] -> Position -> Bool
+goal playout p = maybe False isThing (lookup p playout)
+
+neighbours :: [(Position, Tile)] -> Position -> Set Position
+neighbours playout (x, y) =
+  S.fromList
+  . map fst
+  . filter (maybe False movable . snd)
+  . zip possible
+  . map (`lookup` playout)
+  $ possible
+ where
+  movable (Thing _) = True
+  movable Empty = True
+  movable User = True
+  movable _ = False
+  possible =
+    [ (x-1, y), (x+1, y)
+    , (x, y-1), (x, y+1)
+    ]
+
+isThing (Thing _) = True
+isThing _         = False
 
 positionedLayout :: [[Tile]] -> [(Position, Tile)]
 positionedLayout layout
@@ -40,16 +78,14 @@ positionedLayout layout
   $ zipWith (\r x -> zipWith (\t y -> ((x, y), t)) r [0..]) layout [0..]
 
 -- | Find closes desirable thing!
-acquireTarget :: Position -> [(Position, Tile)] -> Target
-acquireTarget pos layout
+acquireTarget :: [(Position, Tile)] -> Position -> Target
+acquireTarget layout pos
   = fst
   . minimumBy (compare `on` (dist pos . fst)) 
   . filter (isThing . snd)
   $ layout
-  where isThing (Thing _) = True
-        isThing _         = False
 
 -- | Some measure of distance between positions
 dist :: Position -> Position -> Int
-dist (x1, y1) (x2, y2) = sqr (x1 - x2) + sqr (y1 - y2)
+dist (x1, y1) (x2, y2) = floor . sqrt . fromIntegral $ sqr (x1 - x2) + sqr (y1 - y2)
   where sqr x = x * x

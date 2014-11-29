@@ -63,16 +63,18 @@ executable mmc2
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.7 && <4.8
-                       , aeson
-                       , text
-                       , bytestring
-                       , http-conduit
-                       , http-types
-                       , random
-                       , transformers
-                       , mtl
-                       , containers
+  build-depends:
+    base >=4.7 && <4.8
+    , aeson
+    , text
+    , bytestring
+    , http-conduit
+    , http-types
+    , random
+    , transformers
+    , mtl
+    , containers
+    , astar
   
   -- Directories containing source files.
   -- hs-source-dirs:      

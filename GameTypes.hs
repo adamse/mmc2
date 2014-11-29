@@ -52,7 +52,7 @@ instance FromJSON Tile where
     "monkey"   -> pure Monkey
     "song"     -> pure (Thing Song)
     "album"    -> pure (Thing Album)
-    "playlist" -> pure (Thing Song)
+    "playlist" -> pure (Thing Playlist)
     _          -> mzero -- Fail if not one of above types
   parseJSON _ = mzero -- Fail if not string
 
