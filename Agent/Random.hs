@@ -7,7 +7,8 @@ module Agent.Random (
 import Control.Monad.State.Strict
 import System.Random
 
-import GameTypes
+import ToServer
+import FromServer
 import Agent
 
 -- | Contains a generator for random moves

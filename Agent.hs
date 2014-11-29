@@ -2,7 +2,8 @@ module Agent (Agent (..)) where
 
 import Control.Monad.State.Strict
 
-import GameTypes
+import FromServer
+import ToServer
 
 -- | Interface for an agent.
 class Agent agentState where

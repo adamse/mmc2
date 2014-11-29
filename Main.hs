@@ -2,7 +2,7 @@
 module Main where
 
 import Control.Monad
-import Control.Monad.IO.Class
+{-import Control.Monad.IO.Class-}
 import Control.Monad.State.Strict
 import Data.Aeson
 import Data.Maybe
@@ -14,7 +14,8 @@ import System.Exit
 
 import Agent
 import Agent.Random
-import GameTypes
+import FromServer
+import ToServer
 
 -- | URL for API-endpoint.
 apiEndPoint :: String
@@ -32,7 +33,7 @@ main = do
   let apiKey = head args
 
   -- Start a new game
-  startReq <- liftM (setBody (encode (NewGame apiKey))) getBaseReq
+  startReq <- liftM (setBody (encode Idle)) getBaseReq
 
   withManager $ \manager -> do
     response <- httpLbs startReq manager
@@ -66,14 +67,14 @@ getState res = decode $ responseBody res
 -- | Main agent loop.
 loop :: Agent a => ApiKey -> Manager -> GameState -> a -> IO a
 loop apiKey manager gameState agentState
-  | turns gameState <= 0 = return agentState
+  | remainingTurns gameState <= 0 = return agentState
   | otherwise        = do
     -- Step our agent
     (m, agentState') <- runStateT (stepAgent gameState) agentState
     print m
 
     -- Send new action to server
-    req <- liftM (setBody (encode (Move apiKey m))) getBaseReq
+    req <- liftM (setBody (encode (Move m))) getBaseReq
     res <- httpLbs req manager
 
     -- Rinse and repeat

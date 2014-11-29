@@ -17,7 +17,8 @@ import qualified Data.Set as S
 import System.Random
 
 import Agent
-import GameTypes
+import FromServer
+import ToServer
 
 type Target = Position
 
@@ -60,16 +61,12 @@ neighbours playout (x, y) =
   . map (`lookup` playout)
   $ possible
  where
-  movable (Thing _) = True
-  movable Empty = True
-  movable User = True
-  movable _ = False
   possible =
     [ (x-1, y), (x+1, y)
     , (x, y-1), (x, y+1)
     ]
 
-isThing (Thing _) = True
+isThing (Valuable _) = True
 isThing _         = False
 
 positionedLayout :: [[Tile]] -> [(Position, Tile)]
