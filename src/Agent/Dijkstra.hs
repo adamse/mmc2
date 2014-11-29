@@ -6,11 +6,12 @@ module Agent.Dijkstra (
 	DijkstraAgent() 
 	) where
 
+import Debug.Trace
+
 import Control.Monad.State.Strict
 import Data.List
 import Data.Function
 import Data.Foldable as F
-import Data.Graph.AStar
 import Data.Maybe
 import Data.Ord
 import Data.Set (Set)
@@ -36,13 +37,19 @@ type PositionedLayout = M.Map Position Tile
 instance Agent DijkstraAgent where
 	newAgent = return Void
 	killAgent _ = return ()
-	stepAgent = dostuff 
+	stepAgent = dostuff
 
-dostuff (FromServer {..}) = do
+dostuff fs@(FromServer {..}) = do
+    traceShowM fs
+    traceShowM pl
     let (dm, pm) = dijkstra position pl (neighbours pl)
+    traceShowM dm
+    traceShowM pm
     let target = M.foldrWithKey (\p _ currentBest -> case cmpGoodness pl dm p currentBest of {
         GT -> currentBest; _  -> p }) (0,0) dm
+    traceShowM target
     let path = reverse $ constructPath pm position target
+    traceShowM path
     let m = move position (path !! 1)
     return (Move m)
   where
@@ -74,13 +81,13 @@ dijkstra start layout graph = go start (newDistance start) M.empty (allnodes lay
   where
     go current dist prev q =
      if S.null q
-     then undefined
+     then (dist, prev)
      else let u = F.minimumBy (cmpDist dist) q
               q' = S.delete u q
               (d, p) = S.foldr (\v (d, p) -> if distance d u + 1 < distance d v
                 then (M.insert v (distance d u + 1) d, M.insert v u p)
                 else (d, p)
-               ) (dist, prev) (graph u)
+               ) (dist, prev) (trace ("current graph" ++ show (graph u)) (graph u))
 
           in (d, p)
 

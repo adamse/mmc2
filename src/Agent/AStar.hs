@@ -29,8 +29,8 @@ data AStarAgent = Void
 instance Agent AStarAgent where
   newAgent = return Void
   killAgent _ = return ()
-  stepAgent (GameState {..}) =
-    return $ move position (path !! 1)
+  stepAgent (FromServer {..}) =
+    return $ Move $ move position (path !! 1)
    where
     (Just path) = aStar
       (neighbours playout)
@@ -50,7 +50,7 @@ move (x1, y1) (x2, y2)
 
 -- | Do we want to go there?
 goal :: [(Position, Tile)] -> Position -> Bool
-goal playout p = maybe False isThing (lookup p playout)
+goal playout p = maybe False valuable (lookup p playout)
 
 neighbours :: [(Position, Tile)] -> Position -> Set Position
 neighbours playout (x, y) =
