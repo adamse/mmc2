@@ -23,17 +23,13 @@ apiEndPoint = "http://warmup.monkeymusicchallenge.com/team/The%20Human%20League"
 
 main :: IO ()
 main = do
-  args <- getArgs
+  [team, apiKey, gameId'] <- getArgs
+  let gameId = read gameId'
 
-  unless (not (null args)) $ do
-    p <- getProgName
-    putStrLn $ "Usage: " ++ p ++ " API_KEY"
-    exitFailure
-
-  let apiKey = head args
+  let toServer = ToServer team apiKey gameId
 
   -- Start a new game
-  startReq <- liftM (setBody (encode Idle)) getBaseReq
+  startReq <- liftM (setBody (encode (toServer JoinGame))) getBaseReq
 
   withManager $ \manager -> do
     response <- httpLbs startReq manager

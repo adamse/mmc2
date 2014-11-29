@@ -3,12 +3,7 @@
 
 -- |
 -- Implements all types and instances needed to communicate with the game server
-module ToServer (
-  -- * To server
-    ApiKey
-  , Move (..)
-  , Command (..)
-  ) where
+module ToServer where
 
 import Control.Applicative
 import Control.Monad
@@ -39,19 +34,7 @@ instance ToJSON Move where
   toJSON L = String "left"
   toJSON R = String "right"
 
-data Response = Response ApiKey Command
-  deriving (Eq, Show, Generic)
-
-instance ToJSON Response
-
 -- | A command
---
--- Encoding a command:
---
--- >>> let apiKey = "YOUR API KEY"
--- >>> let move = Move apiKey U
--- >>> encode move
--- "{\"apiKey\":\"YOUR API KEY\",\"command\":\"move\",\"move\":\"up\"}"
 data Command
   = Idle
   | JoinGame
@@ -81,9 +64,9 @@ type GameId = Int
 type Team = String
 
 data ToServer = ToServer
-  { apiKey :: ApiKey
+  { team :: Team
+  , apiKey :: ApiKey
   , gameId :: GameId
-  , team :: Team
   , command :: Command
   } deriving (Eq, Show)
 
