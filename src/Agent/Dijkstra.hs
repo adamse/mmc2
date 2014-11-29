@@ -3,9 +3,8 @@
 -- An agent that implements Dijksta's 
 -- algorithm to find shortest path
 module Agent.Dijkstra (
-	DijkstraAgent() 
-	) where
-
+  DijkstraAgent() 
+  ) where
 
 import Control.Monad.State.Strict
 import Data.Foldable as F
@@ -21,15 +20,17 @@ import ToServer
 type Target = Position
 
 -- | Constructor of Agent
-data DijkstraAgent = DA { currentPath :: [Move] }
-	deriving (Show, Eq)
+data DijkstraAgent = DA
+  { currentPath :: [Move]
+  , currentTarget :: Maybe Position
+  } deriving (Show, Eq)
 
 type DistanceMap = M.Map Position Int
 type PrevMap = M.Map Position Position
 type PositionedLayout = M.Map Position Tile
 
 instance Agent DijkstraAgent where
-  newAgent = return (DA [])
+  newAgent = return (DA [] Nothing)
   killAgent _ = return ()
   stepAgent fs@(FromServer {..}) =
     if length inventory < inventorySize
