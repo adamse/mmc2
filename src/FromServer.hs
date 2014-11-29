@@ -123,3 +123,7 @@ instance FromJSON Carryable where
     "tarp" -> pure Trap
     _ -> mzero
   parseJSON _ = mzero
+
+instance ToJSON Carryable where
+  toJSON Banana = String "Banana"
+  toJSON Trap = String "trap"
