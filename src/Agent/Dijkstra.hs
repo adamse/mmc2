@@ -75,14 +75,19 @@ goodness :: DistanceMap -> PositionedLayout -> Position -> Int
 goodness dm pl p =
   let d = fromJust $ M.lookup p dm
       t = fromJust $ M.lookup p pl
-      g = 4
+      prio = case t of
+        Valuable Playlist -> 10
+        Valuable Album -> 4
+        Valuable Song -> 1
+        _ -> 0
   in if valuable t
-     then d - g
+     then d - prio
      else 100000
 
 userGoodness :: DistanceMap -> PositionedLayout-> Position -> Int
-userGoodness _ pl p = if t then 0 else 100000
+userGoodness dm pl p = if t then dist else dist + 100000
   where t = maybe False user (M.lookup p pl)
+        dist = fromMaybe 100000 (M.lookup p dm)
 
 -- | Which move to choose to move from p1 to neighbour p2
 move :: Position -> Position -> Move
