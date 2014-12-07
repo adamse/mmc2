@@ -134,25 +134,24 @@ constructPath pm p t
 newDistance :: Position -> DistanceMap
 newDistance us = M.singleton us 0
 
-dijkstra :: Position -- ^ Start position
-         -> PositionedLayout
-         -> (Position -> Set Position) -- ^ The graph
-         -> (DistanceMap, PrevMap)
-dijkstra start layout graph = go (newDistance start) M.empty (S.insert start $ allnodes layout)
-  where
-    go d p q =
-     if S.null q
-     then (d, p)
-     else let u = F.minimumBy (cmpDist d) q
-              q' = S.delete u q
-              (d', p') = S.foldr (\v (d, p) ->
-                let alt = distance d u + 1
-                in if alt < distance d v
-                   then (M.insert v alt d, M.insert v u p)
-                   else (d, p)
-               ) (d, p) $ graph u
+dijkstra :: Position -> PositionedLayout -> (Position -> Set Position) -> (DistanceMap, PrevMap)
+dijkstra start layout graph = dijkstra' (newDistance start) M.empty (S.insert start $ allnodes layout) graph
 
-          in go d' p' q'
+dijkstra' :: DistanceMap -> PrevMap -> Set Position -> (Position -> Set Position) -> (DistanceMap,PrevMap)
+dijkstra' dist prevs unvisited neigh
+  | S.null unvisited = (dist, prevs)
+  | otherwise = dijkstra' newDists newPrevs nodesLeft neigh
+  where closestNode = F.minimumBy (cmpDist dist) unvisited
+        nodesLeft   = S.delete closestNode unvisited
+        neighbours  = neigh closestNode
+        (newDists, newPrevs) = S.foldr (compareDistance closestNode) (dist,prevs) neighbours
+
+compareDistance :: Position -> Position -> (DistanceMap, PrevMap) -> (DistanceMap, PrevMap)
+compareDistance pos neighbour (d, p)
+  | alt < dist = (M.insert neighbour alt d, M.insert neighbour pos p)
+  | otherwise = (d, p)
+  where alt = distance d pos + 1
+        dist = distance d neighbour
 
 distance :: DistanceMap -> Position -> Int
 distance m p = fromMaybe 100000 (M.lookup p m)
