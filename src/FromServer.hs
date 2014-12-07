@@ -97,6 +97,9 @@ user :: Tile -> Bool
 user User = True
 user _ = False
 
+monkey :: Tile -> Bool
+monkey (Monkey) = True
+monkey _ = False
 -- | Item types.
 data Valuable
   = Song
