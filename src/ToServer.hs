@@ -4,11 +4,11 @@
 -- Implements all types and instances needed to communicate with the game server
 module ToServer where
 
-import Control.Applicative
-import Control.Monad
+-- -- -- -- -- import Control.Applicative
+-- -- -- -- -- import Control.Monad
 import Data.Monoid
 import Data.Aeson
-import GHC.Generics
+-- -- -- -- -- import GHC.Generics
 import System.Random
 
 import FromServer
