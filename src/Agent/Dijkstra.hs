@@ -1,9 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 -- |
--- An agent that implements Dijksta's 
+-- An agent that implements Dijksta's
 -- algorithm to find shortest path
 module Agent.Dijkstra (
-  DijkstraAgent() 
+  DijkstraAgent()
   ) where
 
 import Control.Monad.State.Strict
@@ -46,8 +46,10 @@ goValuable (FromServer {..}) = do
     let (dm, pm) = dijkstra position pl (neighbours movv pl)
     let target = getTarget dm pl goodness
     let path = reverse $ constructPath pm position target
-    let m = move position (path !! 1)
-    return (Move m)
+
+
+    return (getCommand path (speedyp (fromJust buffs)))
+
   where
     pl = positionedLayout layout
     movv t = valuable t || carryable t || movable t
@@ -57,16 +59,27 @@ goUser (FromServer {..}) = do
     let (dm, pm) = dijkstra position pl (neighbours movv pl)
     let target = getTarget dm pl userGoodness
     let path = reverse $ constructPath pm position target
-    let m = move position (path !! 1)
-    return (Move m)
+    return (getCommand path (fromMaybe False (fmap speedyp buffs)))
   where
     pl = positionedLayout layout
     movv t = user t || movable t
 
+speedyp :: Buffs -> Bool
+speedyp (Buffs speedy _) = case speedy of
+                             Nothing -> False
+                             Just n -> n > 0
+
+getCommand path speedy = if speedy
+                            then (Moves (take 2 ms))
+                            else (Move (head ms))
+  where ms = moves path
+
+moves path = zipWith move path (tail path)
+
 getTarget dm pl gn =
   M.foldrWithKey
     (\p _ currentBest ->
-      case cmpGoodness pl dm gn p currentBest of 
+      case cmpGoodness pl dm gn p currentBest of
         GT -> currentBest
         _  -> p)
     (0,0)
@@ -82,12 +95,12 @@ goodness dm pl p =
         Valuable Playlist -> 10
         Valuable Album -> 4
         Valuable Song -> 1
-        Carryable Banana -> 15
+        Carryable Banana -> 2
         _ -> -100000
   in if (valuable t) || (carryable t)
      then d - prio
      else 100000
-     
+
 userGoodness :: DistanceMap -> PositionedLayout-> Position -> Int
 userGoodness dm pl p = if t then dist else dist + 100000
   where t = maybe False user (M.lookup p pl)
@@ -104,7 +117,7 @@ move (y1, x1) (y2, x2)
 constructPath :: PrevMap -> Position -> Target -> [Position]
 constructPath pm p t
   | p == t    = [p]
-  | otherwise = 
+  | otherwise =
     let prev = fromJust (M.lookup t pm)
     in t : constructPath pm p prev
 
@@ -122,7 +135,7 @@ dijkstra start layout graph = go (newDistance start) M.empty (S.insert start $ a
      then (d, p)
      else let u = F.minimumBy (cmpDist d) q
               q' = S.delete u q
-              (d', p') = S.foldr (\v (d, p) -> 
+              (d', p') = S.foldr (\v (d, p) ->
                 let alt = distance d u + 1
                 in if alt < distance d v
                    then (M.insert v alt d, M.insert v u p)
