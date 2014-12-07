@@ -100,42 +100,6 @@ speedyBuffs fs | hasBuffs = fromMaybe 0 (speedy $ fromJust $ buffs fs)
                | otherwise = 0
   where hasBuffs = isJust (buffs fs)
 
-goToTarget :: FromServer -> StateT DijkstraAgent IO Command
-goToTarget fs@(FromServer {..}) = do
-    if inventoryFull
-      then  liftIO $ print "Users"
-      else  liftIO $ print "Valuables and carryables"
-    let (dm, pm) = dijkstra position pl $
-                   neighbours (getFiltering inventoryFull) pl
-    let target = getTarget dm pl (calcPrio inventoryRatio)
-    let path = reverse $ constructPath pm position target
-    let m1 = move position (path !! 1)
-    if (speedyBuffs fs) > 7
-      then do
-          let m2 = move (path !! 1) (path !! 2)
-          return (Moves [m1,m2])
-      else
-      return (Move m1)
-  where
-    pl = positionedLayout layout
-    inventoryFull = not (length inventory < inventorySize)
-    inventoryRatio = d / i
-      where d = fromIntegral $ length inventory :: Double
-            i = fromIntegral $ inventorySize :: Double
-
--- | Gets the filter rules for tiles 
-getFiltering :: Bool -- ^ Should we go to user?
-                -> Tile -- ^ Tile to filter
-                -> Bool 
-getFiltering True tile  = user tile || movable tile || carryable tile || valuable tile
-getFiltering False tile = movable tile || carryable tile || valuable tile
-
--- | Checks whether we have a speedy buff
-speedyBuffs :: FromServer -> Int
-speedyBuffs fs | hasBuffs = fromMaybe 0 (speedy $ fromJust $ buffs fs)
-               | otherwise = 0
-  where hasBuffs = isJust (buffs fs)
-
 getTarget dm pl gn =
   M.foldrWithKey
     (\p _ currentBest ->
