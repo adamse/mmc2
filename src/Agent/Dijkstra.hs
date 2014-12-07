@@ -46,23 +46,24 @@ goValuable (FromServer {..}) = do
     let (dm, pm) = dijkstra position pl (neighbours movv pl)
     let target = getTarget dm pl goodness
     let path = reverse $ constructPath pm position target
-
-
-    return (getCommand path (speedyp (fromJust buffs)))
-
+    return (if length path < 2
+            then Idle
+            else getCommand path (fromMaybe False (fmap speedyp buffs)))
   where
     pl = positionedLayout layout
-    movv t = valuable t || carryable t || movable t
+    movv t = valuable t || carryable t || movable t || monkey t
 
 goUser (FromServer {..}) = do
     liftIO $ print "User"
     let (dm, pm) = dijkstra position pl (neighbours movv pl)
     let target = getTarget dm pl userGoodness
     let path = reverse $ constructPath pm position target
-    return (getCommand path (fromMaybe False (fmap speedyp buffs)))
+    return (if length path < 2
+               then Idle
+               else getCommand path (fromMaybe False (fmap speedyp buffs)))
   where
     pl = positionedLayout layout
-    movv t = user t || movable t
+    movv t = user t || movable t || monkey t
 
 speedyp :: Buffs -> Bool
 speedyp (Buffs speedy _) = case speedy of
@@ -92,10 +93,10 @@ goodness dm pl p =
   let d = fromJust $ M.lookup p dm
       t = fromJust $ M.lookup p pl
       prio = case t of
-        Valuable Playlist -> 10
+        Valuable Playlist -> 6
         Valuable Album -> 4
-        Valuable Song -> 1
-        Carryable Banana -> 2
+        Valuable Song -> 2
+        Carryable Banana -> 3
         _ -> -100000
   in if (valuable t) || (carryable t)
      then d - prio
