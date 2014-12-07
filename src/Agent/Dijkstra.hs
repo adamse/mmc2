@@ -44,14 +44,15 @@ goValuable :: FromServer -> StateT DijkstraAgent IO Command
 goValuable (FromServer {..}) = do
     liftIO $ print "Valuable"
     let (dm, pm) = dijkstra position pl (neighbours movv pl)
-    let target = getTarget dm pl goodness
+    let target = getTarget dm pl (goodness inventoryRatio)
     let path = reverse $ constructPath pm position target
     return (if length path < 2
             then Idle
             else getCommand path (fromMaybe False (fmap speedyp buffs)))
   where
     pl = positionedLayout layout
-    movv t = valuable t || carryable t || movable t || monkey t
+    movv t = valuable t || carryable t || movable t || monkey t || user t
+    inventoryRatio = fromIntegral (length inventory) / fromIntegral inventorySize
 
 goUser (FromServer {..}) = do
     liftIO $ print "User"
@@ -88,19 +89,27 @@ getTarget dm pl gn =
 
 cmpGoodness pl dm gn p1 p2 = compare (gn dm pl p1) (gn dm pl p2)
 
-goodness :: DistanceMap -> PositionedLayout -> Position -> Int
-goodness dm pl p =
+goodness :: Double -> DistanceMap -> PositionedLayout -> Position -> Int
+goodness r dm pl p =
   let d = fromJust $ M.lookup p dm
       t = fromJust $ M.lookup p pl
-      prio = case t of
-        Valuable Playlist -> 6
-        Valuable Album -> 4
-        Valuable Song -> 2
-        Carryable Banana -> 3
-        _ -> -100000
-  in if (valuable t) || (carryable t)
+      prio = getGoodness t r
+  in if (valuable t) || (carryable t) || (user t) 
      then d - prio
      else 100000
+
+-- | Prioritizes the different tiles.
+--   If the tile is a user it will prioritize it different depending on how much inventory we carry
+getGoodness :: Tile -> Double -> Int
+getGoodness (Valuable Playlist) _ = 8
+getGoodness (Valuable Album) _ = 6
+getGoodness (Valuable Song) _ = 4
+getGoodness (Carryable Banana) _ = 3
+getGoodness User r | r > 0.75 = 6
+                   | r > 0.5 = 3
+                   | r > 0 = 2
+                   | otherwise = -100000              
+getGoodness _ _ = -1000000
 
 userGoodness :: DistanceMap -> PositionedLayout-> Position -> Int
 userGoodness dm pl p = if t then dist else dist + 100000
