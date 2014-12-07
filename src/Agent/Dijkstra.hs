@@ -36,9 +36,16 @@ instance Agent DijkstraAgent where
     if ((Carryable Banana) `Prelude.elem` inventory)
         then return (Use Banana)
         else
-            if length inventory < inventorySize
+      if (inventoryUsage fs)  < inventorySize
             then goValuable fs
             else goUser fs
+
+-- | Gets the size of the inventory and ignores bananas, since they are used instantaneously anyway
+inventoryUsage :: FromServer -> Int
+inventoryUsage fs@(FromServer {..})
+  | Carryable Banana `Prelude.elem` inventory = invLength - 1
+  | otherwise = invLength
+  where invLength = length inventory
 
 goValuable :: FromServer -> StateT DijkstraAgent IO Command
 goValuable (FromServer {..}) = do
@@ -89,14 +96,15 @@ getTarget dm pl gn =
 
 cmpGoodness pl dm gn p1 p2 = compare (gn dm pl p1) (gn dm pl p2)
 
+-- | Calculates the weighted distance to a node from the start node of the distance map
+--   If the tile is a user the weighted distance depends on the ratio of the inventory content 
 goodness :: Double -> DistanceMap -> PositionedLayout -> Position -> Int
-goodness r dm pl p =
-  let d = fromJust $ M.lookup p dm
-      t = fromJust $ M.lookup p pl
-      prio = getGoodness t r
-  in if (valuable t) || (carryable t) || (user t) 
-     then d - prio
-     else 100000
+goodness r dm pl p
+  | valuable t || carryable t || user t || monkey t = d - prio
+  | otherwise = 100000
+  where d = fromJust $ M.lookup p dm
+        t = fromJust $ M.lookup p pl
+        prio = getGoodness t r
 
 -- | Prioritizes the different tiles.
 --   If the tile is a user it will prioritize it different depending on how much inventory we carry
@@ -105,11 +113,13 @@ getGoodness (Valuable Playlist) _ = 8
 getGoodness (Valuable Album) _ = 6
 getGoodness (Valuable Song) _ = 4
 getGoodness (Carryable Banana) _ = 3
-getGoodness User r | r > 0.75 = 6
-                   | r > 0.5 = 3
-                   | r > 0 = 2
-                   | otherwise = -100000              
+getGoodness User r
+  | r > 0.75 = 6
+  | r > 0.5 = 3
+  | r > 0 = 2
+  | otherwise = -100000              
 getGoodness _ _ = -1000000
+
 
 userGoodness :: DistanceMap -> PositionedLayout-> Position -> Int
 userGoodness dm pl p = if t then dist else dist + 100000
@@ -155,6 +165,7 @@ compareDistance pos neighbour (d, p)
 
 distance :: DistanceMap -> Position -> Int
 distance m p = fromMaybe 100000 (M.lookup p m)
+
 cmpDist :: DistanceMap -> Position -> Position -> Ordering
 cmpDist m p1 p2 = let d1 = distance m p1
                       d2 = distance m p2
